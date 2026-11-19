@@ -35,11 +35,14 @@ pub(crate) mod update_hash;
 mod manual_update;
 mod version;
 pub use version::*;
-#[cfg(any(target_os = "android", target_os = "ios", feature = "flutter"))]
+// Wrap drives the client through `wrap_ffi`, so the Dart bridge is only built
+// when the Flutter feature is actually on: the iOS/Android apps no longer need
+// the generated bridge file or the Flutter toolchain.
+#[cfg(feature = "flutter")]
 mod bridge_generated;
-#[cfg(any(target_os = "android", target_os = "ios", feature = "flutter"))]
+#[cfg(feature = "flutter")]
 pub mod flutter;
-#[cfg(any(target_os = "android", target_os = "ios", feature = "flutter"))]
+#[cfg(feature = "flutter")]
 pub mod flutter_ffi;
 use common::*;
 mod auth_2fa;
