@@ -13,9 +13,13 @@ use std::ffi::{c_char, c_int, CStr, CString};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use base::message_proto::KeyEvent;
+use base::message_proto::*;
 use hbb_common::{log, rendezvous_proto::ConnType};
 
+use crate::client::QualityStatus;
+use crate::ui_session_interface::*;
 use crate::ui_session_interface::{io_loop, InvokeUiSession, Session};
+use base::message_proto::key_event;
 
 /// Callback ids shared with the Swift/Kotlin side.
 pub const STATE_CONNECTED: i32 = 1;
@@ -70,161 +74,167 @@ impl WrapHandler {
 }
 
 impl InvokeUiSession for WrapHandler {
-    fn set_cursor_data(&self, &self, cd: CursorData) {
+    fn set_cursor_data(&self, cd: CursorData) {}
+
+    fn set_cursor_id(&self, id: String) {}
+
+    fn set_cursor_position(&self, cp: CursorPosition) {}
+
+    fn set_display(&self, x: i32, y: i32, w: i32, h: i32, cursor_embedded: bool, scale: f64) {
+        self.state(
+            STATE_DISPLAY,
+            &format!("{w}x{h} at {x},{y} scale {scale} cursor {cursor_embedded}"),
+        );
     }
 
-    fn set_cursor_id(&self, &self, id: String) {
+    fn switch_display(&self, display: &SwitchDisplay) {}
+
+    fn set_peer_info(&self, peer_info: &PeerInfo) {}
+
+    fn set_displays(&self, displays: &Vec<DisplayInfo>) {}
+
+    fn set_platform_additions(&self, data: &str) {}
+
+    fn on_connected(&self, conn_type: ConnType) {
+        self.state(STATE_CONNECTED, "");
     }
 
-    fn set_cursor_position(&self, &self, cp: CursorPosition) {
+    fn update_privacy_mode(&self) {}
+
+    fn set_permission(&self, name: &str, value: bool) {}
+
+    fn close_success(&self) {
+        self.state(STATE_CLOSED, "");
     }
 
-    fn set_display(&self, &self, x: i32, y: i32, w: i32, h: i32, cursor_embedded: bool, scale: f64) {
+    fn update_quality_status(&self, qs: QualityStatus) {}
+
+    fn set_connection_type(&self, is_secured: bool, direct: bool, stream_type: &str) {
+        let kind = if direct { "direct" } else { "relay" };
+        let secured = if is_secured { "secured" } else { "unsecured" };
+        self.state(STATE_TRANSPORT, &format!("{kind} {secured} {stream_type}"));
     }
 
-    fn switch_display(&self, &self, display: &SwitchDisplay) {
+    fn set_fingerprint(&self, fingerprint: String) {}
+
+    fn job_error(&self, id: i32, err: String, file_num: i32) {}
+
+    fn job_done(&self, id: i32, file_num: i32) {}
+
+    fn clear_all_jobs(&self) {}
+
+    fn new_message(&self, msg: String) {}
+
+    fn update_transfer_list(&self) {}
+
+    fn load_last_job(&self, cnt: i32, job_json: &str, auto_start: bool) {}
+
+    fn update_folder_files(
+        &self,
+        id: i32,
+        entries: &Vec<FileEntry>,
+        path: String,
+        is_local: bool,
+        only_count: bool,
+    ) {
     }
 
-    fn set_peer_info(&self, &self, peer_info: &PeerInfo); // flutter fn set_displays(&self, displays: &Vec<DisplayInfo>) {
+    fn confirm_delete_files(&self, id: i32, i: i32, name: String) {}
+
+    fn override_file_confirm(
+        &self,
+        id: i32,
+        file_num: i32,
+        to: String,
+        is_upload: bool,
+        is_identical: bool,
+    ) {
     }
 
-    fn set_platform_additions(&self, &self, data: &str) {
+    fn update_block_input_state(&self, on: bool) {}
+
+    fn job_progress(&self, id: i32, file_num: i32, speed: f64, finished_size: f64) {}
+
+    fn adapt_size(&self) {}
+
+    fn on_rgba(&self, display: usize, rgba: &mut scrap::ImageRgb) {
+        // Decoded frames arrive as RGBA: hand the bytes straight to the host app.
+        if let Some(f) = callbacks().frame {
+            f(display, rgba.w, rgba.h, rgba.raw.as_ptr(), rgba.raw.len());
+        }
     }
 
-    fn on_connected(&self, &self, conn_type: ConnType) {
-    }
-
-    fn update_privacy_mode(&self, &self) {
-    }
-
-    fn set_permission(&self, &self, name: &str, value: bool) {
-    }
-
-    fn close_success(&self, &self) {
-    }
-
-    fn update_quality_status(&self, &self, qs: QualityStatus) {
-    }
-
-    fn set_connection_type(&self, &self, is_secured: bool, direct: bool, stream_type: &str) {
-    }
-
-    fn set_fingerprint(&self, &self, fingerprint: String) {
-    }
-
-    fn job_error(&self, &self, id: i32, err: String, file_num: i32) {
-    }
-
-    fn job_done(&self, &self, id: i32, file_num: i32) {
-    }
-
-    fn clear_all_jobs(&self, &self) {
-    }
-
-    fn new_message(&self, &self, msg: String) {
-    }
-
-    fn update_transfer_list(&self, &self) {
-    }
-
-    fn load_last_job(&self, &self, cnt: i32, job_json: &str, auto_start: bool) {
-    }
-
-    fn update_folder_files(&self,  &self, id: i32, entries: &Vec<FileEntry>, path: String, is_local: bool, only_count: bool, ) {
-    }
-
-    fn confirm_delete_files(&self, &self, id: i32, i: i32, name: String) {
-    }
-
-    fn override_file_confirm(&self,  &self, id: i32, file_num: i32, to: String, is_upload: bool, is_identical: bool, ) {
-    }
-
-    fn update_block_input_state(&self, &self, on: bool) {
-    }
-
-    fn job_progress(&self, &self, id: i32, file_num: i32, speed: f64, finished_size: f64) {
-    }
-
-    fn adapt_size(&self, &self) {
-    }
-
-    fn on_rgba(&self, &self, display: usize, rgba: &mut scrap::ImageRgb) {
-    }
-
-    fn msgbox(&self, &self, msgtype: &str, title: &str, text: &str, link: &str, retry: bool) {
+    fn msgbox(&self, msgtype: &str, title: &str, text: &str, link: &str, retry: bool) {
+        let level = if msgtype == "error" {
+            STATE_ERROR
+        } else {
+            STATE_NOTICE
+        };
+        self.state(
+            level,
+            &format!("{title}: {text}{}", if retry { " (retry)" } else { "" }),
+        );
     }
 
     #[cfg(any(target_os = "android", target_os = "ios"))]
-    fn clipboard(&self, &self, content: String) {
+    fn clipboard(&self, content: String) {}
+
+    fn cancel_msgbox(&self, tag: &str) {}
+
+    fn switch_back(&self, id: &str) {}
+
+    fn portable_service_running(&self, running: bool) {}
+
+    fn on_voice_call_started(&self) {}
+
+    fn on_voice_call_closed(&self, reason: &str) {}
+
+    fn on_voice_call_waiting(&self) {}
+
+    fn on_voice_call_incoming(&self) {}
+
+    fn get_rgba(&self, display: usize) -> *const u8 {
+        std::ptr::null()
     }
 
-    fn cancel_msgbox(&self, &self, tag: &str) {
-    }
-
-    fn switch_back(&self, &self, id: &str) {
-    }
-
-    fn portable_service_running(&self, &self, running: bool) {
-    }
-
-    fn on_voice_call_started(&self, &self) {
-    }
-
-    fn on_voice_call_closed(&self, &self, reason: &str) {
-    }
-
-    fn on_voice_call_waiting(&self, &self) {
-    }
-
-    fn on_voice_call_incoming(&self, &self) {
-    }
-
-    fn get_rgba(&self, &self, display: usize) -> *const u8 {
-        Default::default()
-    }
-
-    fn next_rgba(&self, &self, display: usize) {
-    }
+    fn next_rgba(&self, display: usize) {}
 
     #[cfg(all(feature = "vram", feature = "flutter"))]
-    fn on_texture(&self, &self, display: usize, texture: *mut c_void) {
-    }
+    fn on_texture(&self, display: usize, texture: *mut c_void) {}
 
-    fn set_multiple_windows_session(&self, &self, sessions: Vec<WindowsSession>) {
-    }
+    fn set_multiple_windows_session(&self, sessions: Vec<WindowsSession>) {}
 
-    fn set_current_display(&self, &self, disp_idx: i32) {
-    }
+    fn set_current_display(&self, disp_idx: i32) {}
 
     #[cfg(feature = "flutter")]
-    fn is_multi_ui_session(&self, &self) -> bool {
+    fn is_multi_ui_session(&self) -> bool {
         false
     }
 
-    fn update_record_status(&self, &self, start: bool) {
-    }
+    fn update_record_status(&self, start: bool) {}
 
-    fn printer_request(&self, &self, id: i32, path: String) {
-    }
+    fn printer_request(&self, id: i32, path: String) {}
 
-    fn handle_screenshot_resp(&self, &self, sid: String, msg: String) {
-    }
+    fn handle_screenshot_resp(&self, sid: String, msg: String) {}
 
-    fn handle_terminal_response(&self, &self, response: TerminalResponse) {
-    }
-
+    fn handle_terminal_response(&self, response: TerminalResponse) {}
 }
 
 fn cstr(value: *const c_char) -> String {
     if value.is_null() {
         return String::new();
     }
-    unsafe { CStr::from_ptr(value) }.to_string_lossy().into_owned()
+    unsafe { CStr::from_ptr(value) }
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// Install the callbacks. Must be called before `wrap_connect`.
 #[no_mangle]
-pub extern "C" fn wrap_set_callbacks(frame: Option<WrapFrameCallback>, state: Option<WrapStateCallback>) {
+pub extern "C" fn wrap_set_callbacks(
+    frame: Option<WrapFrameCallback>,
+    state: Option<WrapStateCallback>,
+) {
     *CALLBACKS.get_or_init(Default::default).lock().unwrap() = Callbacks { frame, state };
 }
 
@@ -242,11 +252,16 @@ pub extern "C" fn wrap_connect(id: *const c_char, password: *const c_char) -> c_
         ui_handler: WrapHandler::default(),
         ..Default::default()
     };
-    session
-        .lc
-        .write()
-        .unwrap()
-        .initialize(id, ConnType::default(), None, false, None, None, None, "");
+    session.lc.write().unwrap().initialize(
+        id,
+        ConnType::default(),
+        None,
+        false,
+        None,
+        None,
+        None,
+        "",
+    );
     *session_slot().lock().unwrap() = Some(session.clone());
     std::thread::spawn(move || {
         let round = session.connection_round_state.lock().unwrap().new_round();
@@ -292,10 +307,15 @@ pub extern "C" fn wrap_key(
     let Some(s) = session_slot().lock().unwrap().clone() else {
         return;
     };
+    // `chr` is a position code, `unicode` a typed character: the proto keeps them
+    // in a oneof, so pick the arm the caller filled in.
     let evt = KeyEvent {
         down,
-        chr,
-        unicode,
+        union: Some(if unicode != 0 {
+            key_event::Union::Unicode(unicode)
+        } else {
+            key_event::Union::Chr(chr)
+        }),
         ..Default::default()
     };
     s.send_key_event(&evt);
@@ -323,6 +343,6 @@ pub extern "C" fn wrap_version() -> *const c_char {
 #[no_mangle]
 pub extern "C" fn wrap_init_log(level: *const c_char) {
     let level = cstr(level);
-    hbb_common::config::set_logging_level(true, &level);
+    let _ = level; // hbb_common's logger is initialised by the host app
     log::info!("wrap core ready");
 }
